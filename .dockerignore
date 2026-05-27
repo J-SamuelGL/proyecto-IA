@@ -1,0 +1,21 @@
+node_modules/
+dist/
+.git/
+.env
+.env.*
+!.env.example
+
+# Service account key files
+*.json
+!package.json
+!package-lock.json
+!tsconfig.json
+
+# Dev/test/docs — not needed in the image
+tests/
+docs/
+n8n-workflows/
+test-calendar.mjs
+README.md
+CLAUDE.md
+AGENTS.md

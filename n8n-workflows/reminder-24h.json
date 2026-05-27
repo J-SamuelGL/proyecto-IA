@@ -1,0 +1,84 @@
+{
+  "name": "Recordatorio 24h - Azul Horizonte",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "cronExpression", "expression": "0 14 * * *" }]
+        }
+      },
+      "id": "aa010001-0001-0001-0001-000000000001",
+      "name": "Diario 8AM Guatemala",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": { "__rl": true, "value": "={{ $env.GOOGLE_SHEETS_ID }}", "mode": "id" },
+        "sheetName": { "__rl": true, "value": "Reservaciones", "mode": "name" },
+        "options": {}
+      },
+      "id": "aa010001-0002-0002-0002-000000000002",
+      "name": "Leer Reservaciones",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// 'mañana' en hora Guatemala (UTC-6)\nconst nowGT = new Date(Date.now() - 6 * 60 * 60 * 1000);\nconst tomorrowGT = new Date(nowGT);\ntomorrowGT.setUTCDate(tomorrowGT.getUTCDate() + 1);\nconst tStr = tomorrowGT.toISOString().split('T')[0];\n\nreturn $input.all().filter(item => {\n  const r = item.json;\n  // Google Sheets devuelve 'YYYY-MM-DD HH:MM:SS' (espacio) o 'YYYY-MM-DD'\n  // Tomamos solo la parte de fecha para comparar\n  const ci = String(r.check_in || '').trim().split(/[ T]/)[0];\n  return ci === tStr\n    && r.status === 'confirmed'\n    && r.reminder_24h !== 'TRUE'\n    && r.reminder_24h !== true;\n});"
+      },
+      "id": "aa010001-0003-0003-0003-000000000003",
+      "name": "Filtrar check-ins de mañana",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.email }}",
+        "subject": "🌊 Recordatorio: tu check-in en Azul Horizonte es mañana",
+        "emailType": "html",
+        "message": "<!DOCTYPE html><html><body style=\"font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px\"><div style=\"background:linear-gradient(135deg,#1e3a5f,#0891b2);padding:30px;border-radius:12px 12px 0 0;text-align:center\"><h1 style=\"color:white;margin:0\">🌊 Azul Horizonte</h1><p style=\"color:#bae6fd;margin:8px 0 0\">Boutique Hotel · Champerico, Guatemala</p></div><div style=\"background:white;padding:30px;border:1px solid #e2e8f0;border-radius:0 0 12px 12px\"><h2 style=\"color:#0891b2\">📅 ¡Tu llegada es mañana!</h2><p>Hola <strong>{{ $json.name }}</strong>,</p><p>Te recordamos que tu check-in en <strong>Azul Horizonte Boutique Hotel</strong> es <strong>mañana a las 3:00 PM</strong>.</p><table style=\"width:100%;border-collapse:collapse;margin:20px 0\"><tr style=\"background:#f0f9ff\"><td style=\"padding:12px;border:1px solid #bae6fd;font-weight:bold\">Habitación</td><td style=\"padding:12px;border:1px solid #bae6fd\">{{ $json.room_type }}</td></tr><tr><td style=\"padding:12px;border:1px solid #bae6fd;font-weight:bold\">Check-in</td><td style=\"padding:12px;border:1px solid #bae6fd\">{{ $json.check_in }} — 3:00 PM</td></tr><tr style=\"background:#f0f9ff\"><td style=\"padding:12px;border:1px solid #bae6fd;font-weight:bold\">Check-out</td><td style=\"padding:12px;border:1px solid #bae6fd\">{{ $json.check_out }} — 12:00 PM</td></tr><tr><td style=\"padding:12px;border:1px solid #bae6fd;font-weight:bold\">Confirmación</td><td style=\"padding:12px;border:1px solid #bae6fd\">{{ $json.booking_id }}</td></tr></table><div style=\"background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;padding:16px;margin:16px 0\"><p style=\"margin:0;color:#92400e\">📍 <strong>Dirección:</strong> Playa Champerico, Retalhuleu, Guatemala<br>🚗 3h desde Ciudad de Guatemala · 45 min desde Retalhuleu</p></div><p>Nuestro equipo estará esperándote en recepción. ¡Hasta pronto! 🏨</p><hr style=\"border:none;border-top:1px solid #e2e8f0;margin:20px 0\"><p style=\"color:#94a3b8;font-size:12px;text-align:center\">¿Necesitas cancelar tu reservación? <a href=\"{{ $env.N8N_HOST }}/webhook/cancel-booking?id={{ $json.booking_id }}\" style=\"color:#ef4444\">Haz clic aquí</a><br>Política de cancelación: hasta 48 horas antes del check-in</p></div></body></html>",
+        "options": { "senderName": "Azul Horizonte Boutique Hotel" }
+      },
+      "id": "aa010001-0004-0004-0004-000000000004",
+      "name": "Enviar recordatorio 24h",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": { "__rl": true, "value": "={{ $env.GOOGLE_SHEETS_ID }}", "mode": "id" },
+        "sheetName": { "__rl": true, "value": "Reservaciones", "mode": "name" },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": { "reminder_24h": "TRUE" },
+          "matchingColumns": ["booking_id"]
+        },
+        "options": {}
+      },
+      "id": "aa010001-0005-0005-0005-000000000005",
+      "name": "Marcar reminder_24h",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [1120, 300]
+    }
+  ],
+  "connections": {
+    "Diario 8AM Guatemala":        { "main": [[{ "node": "Leer Reservaciones",          "type": "main", "index": 0 }]] },
+    "Leer Reservaciones":          { "main": [[{ "node": "Filtrar check-ins de mañana", "type": "main", "index": 0 }]] },
+    "Filtrar check-ins de mañana": { "main": [[{ "node": "Enviar recordatorio 24h",     "type": "main", "index": 0 }]] },
+    "Enviar recordatorio 24h":     { "main": [[{ "node": "Marcar reminder_24h",          "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "staticData": null,
+  "tags": ["hotel", "recordatorios"],
+  "triggerCount": 0,
+  "updatedAt": "2026-05-22T00:00:00.000Z",
+  "versionId": "2"
+}

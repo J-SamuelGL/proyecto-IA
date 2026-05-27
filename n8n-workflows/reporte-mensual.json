@@ -1,0 +1,65 @@
+{
+  "name": "Reporte Mensual - Azul Horizonte",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "cronExpression", "expression": "0 13 1 * *" }]
+        }
+      },
+      "id": "rr010001-0001-0001-0001-000000000001",
+      "name": "Día 1 del mes 7AM Guatemala",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": { "__rl": true, "value": "={{ $env.GOOGLE_SHEETS_ID }}", "mode": "id" },
+        "sheetName": { "__rl": true, "value": "Reservaciones", "mode": "name" },
+        "options": {}
+      },
+      "id": "rr010001-0002-0002-0002-000000000002",
+      "name": "Leer todas las reservaciones",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $input.all().map(i => i.json);\n\n// Mes anterior\nconst now = new Date();\nconst firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);\nconst firstOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);\nconst monthName = firstOfLastMonth.toLocaleString('es-GT', { month: 'long', year: 'numeric' });\n\n// Filtrar por check_in en el mes anterior\nconst monthRows = rows.filter(r => {\n  if (!r.check_in) return false;\n  const d = new Date(r.check_in);\n  return d >= firstOfLastMonth && d < firstOfMonth;\n});\n\nconst PRICES = { SVM: 950, SFM: 1450, SP: 2200 };\nconst ROOM_NAMES = { SVM: 'Suite Vista Mar', SFM: 'Suite Frente al Mar', SP: 'Suite Presidencial' };\n\nlet revenue = 0;\nconst byRoom = { SVM: { count: 0, nights: 0 }, SFM: { count: 0, nights: 0 }, SP: { count: 0, nights: 0 } };\n\nconst confirmed = monthRows.filter(r => r.status === 'confirmed' || r.status === 'modified');\nconst cancelled = monthRows.filter(r => r.status === 'cancelled');\n\nconfirmed.forEach(r => {\n  const nights = Math.max(1, Math.round((new Date(r.check_out) - new Date(r.check_in)) / 86400000));\n  revenue += (PRICES[r.room_type] || 0) * nights;\n  if (byRoom[r.room_type]) {\n    byRoom[r.room_type].count++;\n    byRoom[r.room_type].nights += nights;\n  }\n});\n\nconst roomRows = Object.entries(byRoom)\n  .map(([k, v]) => `<tr><td style='padding:10px;border:1px solid #e2e8f0'>${ROOM_NAMES[k]}</td><td style='padding:10px;border:1px solid #e2e8f0;text-align:center'>${v.count}</td><td style='padding:10px;border:1px solid #e2e8f0;text-align:center'>${v.nights}</td><td style='padding:10px;border:1px solid #e2e8f0;text-align:right'>Q${(PRICES[k] * v.nights).toLocaleString()}</td></tr>`)\n  .join('');\n\nconst html = `<!DOCTYPE html><html><body style='font-family:Arial,sans-serif;max-width:700px;margin:0 auto;padding:20px'>\n<div style='background:linear-gradient(135deg,#1e3a5f,#0891b2);padding:30px;border-radius:12px 12px 0 0;text-align:center'>\n<h1 style='color:white;margin:0'>🌊 Azul Horizonte</h1>\n<p style='color:#bae6fd;margin:8px 0 0'>Reporte de Reservaciones — ${monthName}</p>\n</div>\n<div style='background:white;padding:30px;border:1px solid #e2e8f0;border-radius:0 0 12px 12px'>\n<h2 style='color:#1e293b'>Resumen del mes</h2>\n<div style='display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:20px 0'>\n<div style='background:#f0f9ff;border-radius:8px;padding:16px;text-align:center'>\n<p style='font-size:32px;font-weight:bold;color:#0891b2;margin:0'>${confirmed.length}</p>\n<p style='color:#64748b;font-size:14px;margin:4px 0'>Reservaciones activas</p>\n</div>\n<div style='background:#fef3c7;border-radius:8px;padding:16px;text-align:center'>\n<p style='font-size:32px;font-weight:bold;color:#d97706;margin:0'>${cancelled.length}</p>\n<p style='color:#64748b;font-size:14px;margin:4px 0'>Cancelaciones</p>\n</div>\n<div style='background:#f0fdf4;border-radius:8px;padding:16px;text-align:center'>\n<p style='font-size:32px;font-weight:bold;color:#16a34a;margin:0'>Q${revenue.toLocaleString()}</p>\n<p style='color:#64748b;font-size:14px;margin:4px 0'>Ingresos estimados</p>\n</div>\n</div>\n<h3 style='color:#1e293b'>Por tipo de habitación</h3>\n<table style='width:100%;border-collapse:collapse'>\n<thead><tr style='background:#f8fafc'>\n<th style='padding:10px;border:1px solid #e2e8f0;text-align:left'>Habitación</th>\n<th style='padding:10px;border:1px solid #e2e8f0'>Reservas</th>\n<th style='padding:10px;border:1px solid #e2e8f0'>Noches</th>\n<th style='padding:10px;border:1px solid #e2e8f0;text-align:right'>Ingreso</th>\n</tr></thead>\n<tbody>${roomRows}</tbody>\n</table>\n<p style='color:#94a3b8;font-size:12px;margin-top:24px'>Reporte generado automáticamente por n8n · ${new Date().toLocaleDateString('es-GT')}</p>\n</div></body></html>`;\n\nreturn [{ json: { html, monthName, total: monthRows.length, confirmed: confirmed.length, cancelled: cancelled.length, revenue } }];"
+      },
+      "id": "rr010001-0003-0003-0003-000000000003",
+      "name": "Calcular estadísticas",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $env.ADMIN_EMAIL }}",
+        "subject": "📊 Reporte mensual — Azul Horizonte — {{ $json.monthName }}",
+        "emailType": "html",
+        "message": "={{ $json.html }}",
+        "options": { "senderName": "Azul Horizonte · Sistema de Reservaciones" }
+      },
+      "id": "rr010001-0004-0004-0004-000000000004",
+      "name": "Enviar reporte al admin",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [900, 300]
+    }
+  ],
+  "connections": {
+    "Día 1 del mes 7AM Guatemala":  { "main": [[{ "node": "Leer todas las reservaciones", "type": "main", "index": 0 }]] },
+    "Leer todas las reservaciones": { "main": [[{ "node": "Calcular estadísticas",         "type": "main", "index": 0 }]] },
+    "Calcular estadísticas":        { "main": [[{ "node": "Enviar reporte al admin",        "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "staticData": null,
+  "tags": ["hotel", "reporte"],
+  "triggerCount": 0,
+  "updatedAt": "2026-05-22T00:00:00.000Z",
+  "versionId": "1"
+}

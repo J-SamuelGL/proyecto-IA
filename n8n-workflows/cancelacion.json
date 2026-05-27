@@ -1,0 +1,158 @@
+{
+  "name": "Cancelación de Reserva - Azul Horizonte",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "cancel-booking",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "cc010001-0001-0001-0001-000000000001",
+      "name": "Webhook Cancelación",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [240, 300],
+      "webhookId": "cancel-booking"
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": { "__rl": true, "value": "={{ $env.GOOGLE_SHEETS_ID }}", "mode": "id" },
+        "sheetName": { "__rl": true, "value": "Reservaciones", "mode": "name" },
+        "options": {}
+      },
+      "id": "cc010001-0002-0002-0002-000000000002",
+      "name": "Leer Reservaciones",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const id = $('Webhook Cancelación').item.json.query.id;\nconst match = $input.all().find(i => i.json.booking_id === id);\nif (!match) return [{ json: { found: false, booking_id: id } }];\nreturn [{ json: { ...match.json, found: true } }];"
+      },
+      "id": "cc010001-0003-0003-0003-000000000003",
+      "name": "Buscar reservación",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [
+            {
+              "id": "cond-found",
+              "leftValue": "={{ $json.found }}",
+              "rightValue": true,
+              "operator": { "type": "boolean", "operation": "true" }
+            },
+            {
+              "id": "cond-status",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "confirmed",
+              "operator": { "type": "string", "operation": "equals" }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "cc010001-0004-0004-0004-000000000004",
+      "name": "¿Confirmada y encontrada?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "resource": "event",
+        "operation": "delete",
+        "calendarId": "={{ $env.GOOGLE_CALENDAR_ID }}",
+        "eventId": "={{ $json.calendar_event_id }}"
+      },
+      "id": "cc010001-0005-0005-0005-000000000005",
+      "name": "Eliminar evento Calendar",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.1,
+      "position": [1120, 180]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": { "__rl": true, "value": "={{ $env.GOOGLE_SHEETS_ID }}", "mode": "id" },
+        "sheetName": { "__rl": true, "value": "Reservaciones", "mode": "name" },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": { "status": "cancelled" },
+          "matchingColumns": ["booking_id"]
+        },
+        "options": {}
+      },
+      "id": "cc010001-0006-0006-0006-000000000006",
+      "name": "Actualizar status cancelled",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [1340, 180]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Buscar reservación').item.json.email }}",
+        "subject": "Cancelación confirmada — Azul Horizonte",
+        "emailType": "html",
+        "message": "<!DOCTYPE html><html><body style=\"font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px\"><div style=\"background:linear-gradient(135deg,#1e3a5f,#0891b2);padding:30px;border-radius:12px 12px 0 0;text-align:center\"><h1 style=\"color:white;margin:0\">🌊 Azul Horizonte</h1><p style=\"color:#bae6fd;margin:8px 0 0\">Boutique Hotel · Champerico, Guatemala</p></div><div style=\"background:white;padding:30px;border:1px solid #e2e8f0;border-radius:0 0 12px 12px\"><h2 style=\"color:#ef4444\">Reservación Cancelada</h2><p>Hola <strong>{{ $('Buscar reservación').item.json.name }}</strong>,</p><p>Tu reservación ha sido <strong>cancelada exitosamente</strong>.</p><table style=\"width:100%;border-collapse:collapse;margin:20px 0\"><tr style=\"background:#fef2f2\"><td style=\"padding:12px;border:1px solid #fecaca;font-weight:bold\">ID de reservación</td><td style=\"padding:12px;border:1px solid #fecaca\">{{ $('Buscar reservación').item.json.booking_id }}</td></tr><tr><td style=\"padding:12px;border:1px solid #fecaca;font-weight:bold\">Habitación</td><td style=\"padding:12px;border:1px solid #fecaca\">{{ $('Buscar reservación').item.json.room_type }}</td></tr><tr style=\"background:#fef2f2\"><td style=\"padding:12px;border:1px solid #fecaca;font-weight:bold\">Fechas canceladas</td><td style=\"padding:12px;border:1px solid #fecaca\">{{ $('Buscar reservación').item.json.check_in }} al {{ $('Buscar reservación').item.json.check_out }}</td></tr></table><p>Esperamos verte pronto en el Pacífico guatemalteco. Para una nueva reservación, visita nuestro sitio o escríbenos.</p><p style=\"color:#64748b;font-size:14px\">¿Tienes preguntas? Contáctanos al <strong>+502 7777-0000</strong></p></div></body></html>",
+        "options": { "senderName": "Azul Horizonte Boutique Hotel" }
+      },
+      "id": "cc010001-0007-0007-0007-000000000007",
+      "name": "Email cancelación al huésped",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [1560, 180]
+    },
+    {
+      "parameters": {
+        "respondWith": "html",
+        "responseBody": "<!DOCTYPE html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'></head><body style='font-family:Arial,sans-serif;text-align:center;padding:60px 20px;background:#f8fafc'><div style='max-width:500px;margin:0 auto;background:white;padding:40px;border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,.08)'><h1 style='color:#ef4444;font-size:48px;margin:0'>✅</h1><h2 style='color:#1e293b'>Reservación Cancelada</h2><p style='color:#64748b'>Tu reservación ha sido cancelada exitosamente. Recibirás un correo de confirmación en breve.</p><p style='color:#94a3b8;font-size:14px;margin-top:32px'>Azul Horizonte Boutique Hotel · Champerico, Guatemala</p></div></body></html>",
+        "options": {}
+      },
+      "id": "cc010001-0008-0008-0008-000000000008",
+      "name": "Responder: cancelación exitosa",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1780, 180]
+    },
+    {
+      "parameters": {
+        "respondWith": "html",
+        "responseBody": "<!DOCTYPE html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'></head><body style='font-family:Arial,sans-serif;text-align:center;padding:60px 20px;background:#f8fafc'><div style='max-width:500px;margin:0 auto;background:white;padding:40px;border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,.08)'><h1 style='color:#94a3b8;font-size:48px;margin:0'>⚠️</h1><h2 style='color:#1e293b'>Enlace no válido</h2><p style='color:#64748b'>Esta reservación no existe, ya fue cancelada, o el enlace expiró.</p><p style='color:#94a3b8;font-size:14px;margin-top:32px'>Azul Horizonte Boutique Hotel</p></div></body></html>",
+        "options": {}
+      },
+      "id": "cc010001-0009-0009-0009-000000000009",
+      "name": "Responder: no encontrada",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1120, 420]
+    }
+  ],
+  "connections": {
+    "Webhook Cancelación":      { "main": [[{ "node": "Leer Reservaciones",          "type": "main", "index": 0 }]] },
+    "Leer Reservaciones":       { "main": [[{ "node": "Buscar reservación",           "type": "main", "index": 0 }]] },
+    "Buscar reservación":       { "main": [[{ "node": "¿Confirmada y encontrada?",    "type": "main", "index": 0 }]] },
+    "¿Confirmada y encontrada?": {
+      "main": [
+        [{ "node": "Eliminar evento Calendar",  "type": "main", "index": 0 }],
+        [{ "node": "Responder: no encontrada",  "type": "main", "index": 0 }]
+      ]
+    },
+    "Eliminar evento Calendar":    { "main": [[{ "node": "Actualizar status cancelled",   "type": "main", "index": 0 }]] },
+    "Actualizar status cancelled": { "main": [[{ "node": "Email cancelación al huésped",  "type": "main", "index": 0 }]] },
+    "Email cancelación al huésped":{ "main": [[{ "node": "Responder: cancelación exitosa","type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "staticData": null,
+  "tags": ["hotel", "cancelacion"],
+  "triggerCount": 0,
+  "updatedAt": "2026-05-22T00:00:00.000Z",
+  "versionId": "1"
+}

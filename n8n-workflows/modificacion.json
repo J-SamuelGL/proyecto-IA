@@ -1,0 +1,222 @@
+{
+  "name": "Modificación de Reserva - Azul Horizonte",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Modificar Reservación — Azul Horizonte",
+        "formDescription": "Ingresa tu ID de reservación y las nuevas fechas deseadas.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "ID de Reservación",
+              "fieldType": "text",
+              "requiredField": true,
+              "placeholder": "Ej: AH-1748000000000"
+            },
+            {
+              "fieldLabel": "Nueva fecha de check-in (YYYY-MM-DD)",
+              "fieldType": "text",
+              "requiredField": true,
+              "placeholder": "Ej: 2026-07-15"
+            },
+            {
+              "fieldLabel": "Nueva fecha de check-out (YYYY-MM-DD)",
+              "fieldType": "text",
+              "requiredField": true,
+              "placeholder": "Ej: 2026-07-18"
+            }
+          ]
+        },
+        "options": {
+          "formSubmittedText": "✅ Tu solicitud fue recibida. Recibirás un correo con la confirmación de tu modificación.",
+          "path": "modify-booking"
+        }
+      },
+      "id": "mm010001-0001-0001-0001-000000000001",
+      "name": "Formulario Modificación",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [240, 300],
+      "webhookId": "modify-booking"
+    },
+    {
+      "parameters": {
+        "jsCode": "const bookingId = $json['ID de Reservación']?.trim();\nconst rawCheckIn  = $json['Nueva fecha de check-in (YYYY-MM-DD)']?.trim();\nconst rawCheckOut = $json['Nueva fecha de check-out (YYYY-MM-DD)']?.trim();\n\nif (!bookingId || !rawCheckIn || !rawCheckOut) {\n  return [{ json: { valid: false, error: 'Campos incompletos' } }];\n}\n\n// Validate YYYY-MM-DD format\nconst dateRe = /^\\d{4}-\\d{2}-\\d{2}$/;\nif (!dateRe.test(rawCheckIn) || !dateRe.test(rawCheckOut)) {\n  return [{ json: { valid: false, error: 'Formato de fecha inválido' } }];\n}\n\nif (new Date(rawCheckOut) <= new Date(rawCheckIn)) {\n  return [{ json: { valid: false, error: 'Check-out debe ser posterior al check-in' } }];\n}\n\nreturn [{ json: {\n  valid: true,\n  booking_id: bookingId,\n  new_check_in:  rawCheckIn  + 'T15:00:00-06:00',\n  new_check_out: rawCheckOut + 'T12:00:00-06:00',\n  new_check_in_display:  rawCheckIn,\n  new_check_out_display: rawCheckOut\n} }];"
+      },
+      "id": "mm010001-0002-0002-0002-000000000002",
+      "name": "Validar y preparar fechas",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [{
+            "id": "cond-valid",
+            "leftValue": "={{ $json.valid }}",
+            "rightValue": true,
+            "operator": { "type": "boolean", "operation": "true" }
+          }],
+          "combinator": "and"
+        }
+      },
+      "id": "mm010001-0003-0003-0003-000000000003",
+      "name": "¿Datos válidos?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": { "__rl": true, "value": "={{ $env.GOOGLE_SHEETS_ID }}", "mode": "id" },
+        "sheetName": { "__rl": true, "value": "Reservaciones", "mode": "name" },
+        "options": {}
+      },
+      "id": "mm010001-0004-0004-0004-000000000004",
+      "name": "Leer Reservaciones",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [900, 180]
+    },
+    {
+      "parameters": {
+        "jsCode": "const formData = $('Validar y preparar fechas').item.json;\nconst match = $input.all().find(i => i.json.booking_id === formData.booking_id);\n\nif (!match || match.json.status !== 'confirmed') {\n  return [{ json: { found: false, ...formData } }];\n}\n\nreturn [{ json: { found: true, ...match.json, ...formData } }];"
+      },
+      "id": "mm010001-0005-0005-0005-000000000005",
+      "name": "Buscar reservación",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, 180]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [{
+            "id": "cond-found",
+            "leftValue": "={{ $json.found }}",
+            "rightValue": true,
+            "operator": { "type": "boolean", "operation": "true" }
+          }],
+          "combinator": "and"
+        }
+      },
+      "id": "mm010001-0006-0006-0006-000000000006",
+      "name": "¿Reservación encontrada?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1340, 180]
+    },
+    {
+      "parameters": {
+        "resource": "event",
+        "operation": "delete",
+        "calendarId": "={{ $env.GOOGLE_CALENDAR_ID }}",
+        "eventId": "={{ $json.calendar_event_id }}"
+      },
+      "id": "mm010001-0007-0007-0007-000000000007",
+      "name": "Eliminar evento anterior",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.1,
+      "position": [1560, 80]
+    },
+    {
+      "parameters": {
+        "resource": "event",
+        "operation": "create",
+        "calendarId": "={{ $env.GOOGLE_CALENDAR_ID }}",
+        "start": "={{ $('Buscar reservación').item.json.new_check_in }}",
+        "end": "={{ $('Buscar reservación').item.json.new_check_out }}",
+        "additionalFields": {
+          "summary": "Reservación - {{ $('Buscar reservación').item.json.room_type }} - {{ $('Buscar reservación').item.json.name }}",
+          "description": "nombre: {{ $('Buscar reservación').item.json.name }}\nemail: {{ $('Buscar reservación').item.json.email }}\ntelefono: {{ $('Buscar reservación').item.json.phone }}\nhabitacion: {{ $('Buscar reservación').item.json.room_type }}\nhuespedes: {{ $('Buscar reservación').item.json.guests }}\nreservaId: {{ $('Buscar reservación').item.json.booking_id }}",
+          "timezone": "America/Guatemala"
+        }
+      },
+      "id": "mm010001-0008-0008-0008-000000000008",
+      "name": "Crear nuevo evento Calendar",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.1,
+      "position": [1780, 80]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": { "__rl": true, "value": "={{ $env.GOOGLE_SHEETS_ID }}", "mode": "id" },
+        "sheetName": { "__rl": true, "value": "Reservaciones", "mode": "name" },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "check_in": "={{ $('Buscar reservación').item.json.new_check_in_display }}",
+            "check_out": "={{ $('Buscar reservación').item.json.new_check_out_display }}",
+            "calendar_event_id": "={{ $json.id }}",
+            "status": "modified",
+            "reminder_24h": "FALSE",
+            "reminder_2h": "FALSE"
+          },
+          "matchingColumns": ["booking_id"]
+        },
+        "options": {}
+      },
+      "id": "mm010001-0009-0009-0009-000000000009",
+      "name": "Actualizar Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [2000, 80]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Buscar reservación').item.json.email }}",
+        "subject": "✅ Modificación confirmada — Azul Horizonte",
+        "emailType": "html",
+        "message": "<!DOCTYPE html><html><body style=\"font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px\"><div style=\"background:linear-gradient(135deg,#1e3a5f,#0891b2);padding:30px;border-radius:12px 12px 0 0;text-align:center\"><h1 style=\"color:white;margin:0\">🌊 Azul Horizonte</h1><p style=\"color:#bae6fd;margin:8px 0 0\">Boutique Hotel · Champerico, Guatemala</p></div><div style=\"background:white;padding:30px;border:1px solid #e2e8f0;border-radius:0 0 12px 12px\"><h2 style=\"color:#0891b2\">✅ Reservación Modificada</h2><p>Hola <strong>{{ $('Buscar reservación').item.json.name }}</strong>,</p><p>Tu reservación ha sido modificada exitosamente con las nuevas fechas:</p><table style=\"width:100%;border-collapse:collapse;margin:20px 0\"><tr style=\"background:#f0f9ff\"><td style=\"padding:12px;border:1px solid #bae6fd;font-weight:bold\">ID</td><td style=\"padding:12px;border:1px solid #bae6fd\">{{ $('Buscar reservación').item.json.booking_id }}</td></tr><tr><td style=\"padding:12px;border:1px solid #bae6fd;font-weight:bold\">Habitación</td><td style=\"padding:12px;border:1px solid #bae6fd\">{{ $('Buscar reservación').item.json.room_type }}</td></tr><tr style=\"background:#f0f9ff\"><td style=\"padding:12px;border:1px solid #bae6fd;font-weight:bold\">Nuevo Check-in</td><td style=\"padding:12px;border:1px solid #bae6fd\">{{ $('Buscar reservación').item.json.new_check_in_display }} — 3:00 PM</td></tr><tr><td style=\"padding:12px;border:1px solid #bae6fd;font-weight:bold\">Nuevo Check-out</td><td style=\"padding:12px;border:1px solid #bae6fd\">{{ $('Buscar reservación').item.json.new_check_out_display }} — 12:00 PM</td></tr></table><p style=\"color:#64748b;font-size:14px\">¿Preguntas? Contáctanos al <strong>+502 7777-0000</strong></p></div></body></html>",
+        "options": { "senderName": "Azul Horizonte Boutique Hotel" }
+      },
+      "id": "mm010001-0010-0010-0010-000000000010",
+      "name": "Email confirmación modificación",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [2220, 80]
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{ json: { message: 'Reservación no encontrada, ya cancelada, o no confirmada.' } }];"
+      },
+      "id": "mm010001-0011-0011-0011-000000000011",
+      "name": "No encontrada (stop)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1560, 300]
+    }
+  ],
+  "connections": {
+    "Formulario Modificación":    { "main": [[{ "node": "Validar y preparar fechas",    "type": "main", "index": 0 }]] },
+    "Validar y preparar fechas":  { "main": [[{ "node": "¿Datos válidos?",               "type": "main", "index": 0 }]] },
+    "¿Datos válidos?": {
+      "main": [
+        [{ "node": "Leer Reservaciones",   "type": "main", "index": 0 }],
+        [{ "node": "No encontrada (stop)", "type": "main", "index": 0 }]
+      ]
+    },
+    "Leer Reservaciones":          { "main": [[{ "node": "Buscar reservación",           "type": "main", "index": 0 }]] },
+    "Buscar reservación":          { "main": [[{ "node": "¿Reservación encontrada?",     "type": "main", "index": 0 }]] },
+    "¿Reservación encontrada?": {
+      "main": [
+        [{ "node": "Eliminar evento anterior", "type": "main", "index": 0 }],
+        [{ "node": "No encontrada (stop)",     "type": "main", "index": 0 }]
+      ]
+    },
+    "Eliminar evento anterior":       { "main": [[{ "node": "Crear nuevo evento Calendar",    "type": "main", "index": 0 }]] },
+    "Crear nuevo evento Calendar":    { "main": [[{ "node": "Actualizar Sheets",              "type": "main", "index": 0 }]] },
+    "Actualizar Sheets":              { "main": [[{ "node": "Email confirmación modificación","type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "staticData": null,
+  "tags": ["hotel", "modificacion"],
+  "triggerCount": 0,
+  "updatedAt": "2026-05-22T00:00:00.000Z",
+  "versionId": "1"
+}

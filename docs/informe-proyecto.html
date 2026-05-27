@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azul Horizonte — Informe del Proyecto</title>
+<style>
+  :root {
+    --blue: #0d4f8c;
+    --blue-light: #1a6bb5;
+    --teal: #0891b2;
+    --teal-light: #e0f2fe;
+    --gray-50: #f8fafc;
+    --gray-100: #f1f5f9;
+    --gray-200: #e2e8f0;
+    --gray-600: #475569;
+    --gray-700: #334155;
+    --gray-800: #1e293b;
+    --accent: #f97316;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    font-size: 11pt;
+    color: var(--gray-800);
+    background: white;
+    line-height: 1.6;
+  }
+
+  /* ─── PRINT ─── */
+  @media print {
+    body { font-size: 10pt; }
+    .cover { page-break-after: always; }
+    section { page-break-inside: avoid; }
+    h2 { page-break-before: auto; }
+    .no-break { page-break-inside: avoid; }
+    @page { margin: 2cm 2.2cm; }
+  }
+
+  /* ─── COVER ─── */
+  .cover {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: linear-gradient(135deg, var(--blue) 0%, var(--teal) 100%);
+    color: white;
+    text-align: center;
+    padding: 3rem;
+  }
+  .cover .hotel-name {
+    font-size: 36pt;
+    font-weight: 800;
+    letter-spacing: -1px;
+    margin-bottom: 0.25rem;
+  }
+  .cover .tagline {
+    font-size: 13pt;
+    opacity: 0.85;
+    font-style: italic;
+    margin-bottom: 3rem;
+  }
+  .cover .doc-title {
+    font-size: 18pt;
+    font-weight: 600;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.3);
+    padding: 0.75rem 2rem;
+    border-radius: 8px;
+    margin-bottom: 3rem;
+  }
+  .cover .meta {
+    font-size: 10pt;
+    opacity: 0.75;
+    line-height: 2;
+  }
+  .cover .wave { font-size: 48pt; margin-bottom: 1rem; }
+
+  /* ─── PAGE WRAPPER ─── */
+  .page {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 2.5rem 3rem;
+  }
+
+  /* ─── SECTION HEADERS ─── */
+  h2 {
+    font-size: 16pt;
+    font-weight: 700;
+    color: var(--blue);
+    border-bottom: 3px solid var(--teal);
+    padding-bottom: 0.4rem;
+    margin-top: 2.5rem;
+    margin-bottom: 1.2rem;
+  }
+  h3 {
+    font-size: 12pt;
+    font-weight: 700;
+    color: var(--blue-light);
+    margin-top: 1.4rem;
+    margin-bottom: 0.6rem;
+  }
+  h4 {
+    font-size: 10.5pt;
+    font-weight: 600;
+    color: var(--gray-700);
+    margin-top: 1rem;
+    margin-bottom: 0.4rem;
+  }
+  p { margin-bottom: 0.7rem; color: var(--gray-700); }
+
+  /* ─── SUMMARY BOX ─── */
+  .summary-box {
+    background: var(--teal-light);
+    border-left: 4px solid var(--teal);
+    border-radius: 0 8px 8px 0;
+    padding: 1rem 1.4rem;
+    margin: 1rem 0 1.5rem;
+  }
+  .summary-box p { color: var(--gray-800); margin: 0; }
+
+  /* ─── TABLES ─── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 9.5pt;
+    margin: 0.8rem 0 1.2rem;
+  }
+  th {
+    background: var(--blue);
+    color: white;
+    text-align: left;
+    padding: 0.5rem 0.8rem;
+    font-weight: 600;
+  }
+  td {
+    padding: 0.45rem 0.8rem;
+    border-bottom: 1px solid var(--gray-200);
+    color: var(--gray-700);
+  }
+  tr:nth-child(even) td { background: var(--gray-50); }
+  tr:last-child td { border-bottom: none; }
+
+  /* ─── CODE BLOCKS ─── */
+  pre {
+    background: var(--gray-800);
+    color: #e2e8f0;
+    padding: 1rem 1.2rem;
+    border-radius: 8px;
+    font-size: 8.5pt;
+    overflow-x: auto;
+    margin: 0.8rem 0 1.2rem;
+    line-height: 1.5;
+  }
+  code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+  }
+  p code, li code {
+    background: var(--gray-100);
+    color: var(--teal);
+    padding: 0.1em 0.4em;
+    border-radius: 4px;
+    font-size: 9pt;
+  }
+
+  /* ─── FLOW DIAGRAMS (ASCII-style boxes) ─── */
+  .flow {
+    background: var(--gray-50);
+    border: 1px solid var(--gray-200);
+    border-radius: 8px;
+    padding: 1rem 1.4rem;
+    margin: 0.8rem 0 1.2rem;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 8.5pt;
+    line-height: 1.8;
+    white-space: pre-wrap;
+    color: var(--gray-700);
+  }
+
+  /* ─── BADGE ─── */
+  .badge {
+    display: inline-block;
+    padding: 0.15em 0.6em;
+    border-radius: 99px;
+    font-size: 8pt;
+    font-weight: 600;
+    margin-left: 0.3rem;
+    vertical-align: middle;
+  }
+  .badge-blue { background: #dbeafe; color: #1d4ed8; }
+  .badge-green { background: #dcfce7; color: #15803d; }
+  .badge-orange { background: #ffedd5; color: #c2410c; }
+  .badge-purple { background: #f3e8ff; color: #7e22ce; }
+
+  /* ─── STEP LIST ─── */
+  ol.steps {
+    padding-left: 1.5rem;
+    margin: 0.5rem 0 1rem;
+  }
+  ol.steps li {
+    margin-bottom: 0.5rem;
+    color: var(--gray-700);
+    padding-left: 0.3rem;
+  }
+  ol.steps li strong { color: var(--gray-800); }
+
+  /* ─── COMPONENT GRID ─── */
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin: 0.8rem 0 1.2rem;
+  }
+  .card {
+    background: var(--gray-50);
+    border: 1px solid var(--gray-200);
+    border-radius: 8px;
+    padding: 1rem;
+  }
+  .card h4 { margin-top: 0; color: var(--blue); }
+  .card p { font-size: 9.5pt; margin: 0; }
+
+  /* ─── DIVIDER ─── */
+  hr {
+    border: none;
+    border-top: 2px dashed var(--gray-200);
+    margin: 2rem 0;
+  }
+
+  /* ─── ROOM PILLS ─── */
+  .room-pill {
+    display: inline-block;
+    background: var(--blue);
+    color: white;
+    padding: 0.2em 0.7em;
+    border-radius: 6px;
+    font-size: 8.5pt;
+    font-weight: 600;
+    margin-right: 0.4rem;
+  }
+
+  /* ─── FOOTER ─── */
+  .footer {
+    margin-top: 3rem;
+    border-top: 2px solid var(--gray-200);
+    padding-top: 1rem;
+    font-size: 9pt;
+    color: var(--gray-600);
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════ PORTADA ═══════════════════════════════ -->
+<div class="cover">
+  <div class="wave">🌊</div>
+  <div class="hotel-name">Azul Horizonte</div>
+  <div class="tagline">Boutique Hotel · "Donde el Pacífico te abraza"</div>
+  <div class="doc-title">Informe Técnico del Proyecto</div>
+  <div class="meta">
+    Universidad Mariano Gálvez de Guatemala<br>
+    Inteligencia Artificial — Proyecto Final<br>
+    Mayo 2026
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ CONTENIDO ═══════════════════════════════ -->
+<div class="page">
+
+<!-- ───────────────── 1. RESUMEN EJECUTIVO ───────────────── -->
+<h2>1. Resumen Ejecutivo</h2>
+
+<div class="summary-box">
+  <p>Se construyó un sitio web completo para el <strong>Azul Horizonte Boutique Hotel</strong> (Playa Champerico, Retalhuleu) que integra un <strong>agente de IA conversacional</strong> (Claude) con un sistema automatizado de reservaciones orquestado por <strong>Zapier</strong> y <strong>n8n</strong>.</p>
+</div>
+
+<p>El proyecto cubre tres dimensiones principales:</p>
+<ol class="steps">
+  <li><strong>Sitio web público</strong> — páginas estáticas de presentación del hotel, habitaciones, servicios y preguntas frecuentes.</li>
+  <li><strong>Agente de IA</strong> — chat widget embebido que responde preguntas con contexto del hotel (RAG) y captura reservaciones en tiempo real verificando disponibilidad en Google Calendar.</li>
+  <li><strong>Automatización post-reserva</strong> — flujos en Zapier y n8n que envían correos de confirmación, recordatorios 24 h y 2 h antes del check-in, gestionan cancelaciones/modificaciones y generan reportes mensuales al administrador.</li>
+</ol>
+
+<!-- ───────────────── 2. STACK TECNOLÓGICO ───────────────── -->
+<h2>2. Stack Tecnológico</h2>
+
+<table>
+  <thead>
+    <tr><th>Capa</th><th>Tecnología</th><th>Rol</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Frontend / Backend</td><td>TanStack Start (React SSR)</td><td>Páginas web + API routes server-side</td></tr>
+    <tr><td>Lenguaje</td><td>TypeScript</td><td>Todo el codebase</td></tr>
+    <tr><td>Estilos</td><td>Tailwind CSS</td><td>UI del sitio y del chat</td></tr>
+    <tr><td>Contenedores</td><td>Docker + docker-compose</td><td>Empaquetado y despliegue local/nube</td></tr>
+    <tr><td>Despliegue</td><td>Azure Container Apps</td><td>Producción en la nube</td></tr>
+    <tr><td>Agente IA</td><td>Claude API (<code>claude-sonnet-4-6</code>)</td><td>Chat conversacional + tool use</td></tr>
+    <tr><td>Base de conocimiento</td><td>RAG por keywords sobre archivos <code>.md</code></td><td>Contexto del hotel inyectado al agente</td></tr>
+    <tr><td>Disponibilidad</td><td>Google Calendar API (Service Account)</td><td>Verifica si la suite está libre</td></tr>
+    <tr><td>Automatización 1</td><td>Zapier (Webhook + Custom Response)</td><td>Crear evento, enviar correo, registrar en Sheets</td></tr>
+    <tr><td>Automatización 2</td><td>n8n (contenedor Docker)</td><td>Recordatorios, cancelaciones, reportes</td></tr>
+    <tr><td>Base de datos</td><td>Google Sheets</td><td>Registro de todas las reservaciones</td></tr>
+    <tr><td>Correo</td><td>Gmail (vía Zapier y n8n)</td><td>Notificaciones al huésped y admin</td></tr>
+  </tbody>
+</table>
+
+<!-- ───────────────── 3. COMPONENTES DEL SISTEMA ───────────────── -->
+<h2>3. Componentes Principales del Sistema</h2>
+
+<h3>3.1 Sitio Web</h3>
+<div class="grid-2">
+  <div class="card">
+    <h4>Páginas públicas</h4>
+    <p><strong>Home</strong> — propuesta de valor y llamadas a la acción.<br>
+    <strong>Habitaciones</strong> — tipos, precios y capacidad de las 3 suites.<br>
+    <strong>Servicios</strong> — experiencias y actividades del hotel.<br>
+    <strong>FAQ</strong> — preguntas frecuentes.</p>
+  </div>
+  <div class="card">
+    <h4>Chat Widget</h4>
+    <p>Botón flotante persistente en todas las páginas. Abre un panel lateral con el historial de conversación y, cuando el agente lo decide, renderiza el <strong>formulario de reservación</strong> directamente dentro del chat.</p>
+  </div>
+</div>
+
+<h3>3.2 Habitaciones</h3>
+<table>
+  <thead>
+    <tr><th>Código</th><th>Tipo</th><th>Precio / noche</th><th>Capacidad</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><span class="room-pill">SVM</span></td>
+      <td>Suite Vista Mar</td>
+      <td>Q 950 (~$120)</td>
+      <td>1–2 personas</td>
+    </tr>
+    <tr>
+      <td><span class="room-pill">SFM</span></td>
+      <td>Suite Frente al Mar</td>
+      <td>Q 1,450 (~$180)</td>
+      <td>2–3 personas</td>
+    </tr>
+    <tr>
+      <td><span class="room-pill">SP</span></td>
+      <td>Suite Presidencial</td>
+      <td>Q 2,200 (~$280)</td>
+      <td>2–6 personas</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>3.3 Agente de IA (Claude)</h3>
+<p>El agente corre en el servidor. Cada mensaje del usuario pasa por dos pasos antes de llegar a Claude:</p>
+<ol class="steps">
+  <li><strong>RAG (Retrieval-Augmented Generation):</strong> <code>rag.ts</code> busca por keywords en los archivos <code>.md</code> del hotel (habitaciones, políticas, servicios, FAQ) y adjunta los fragmentos relevantes al system prompt.</li>
+  <li><strong>Llamada a Claude API:</strong> <code>chatFn.ts</code> envía el historial completo de la conversación más el contexto RAG. Claude puede responder en texto o invocar el tool <code>show_booking_form</code>.</li>
+</ol>
+
+<p>El agente tiene definido <strong>un único tool</strong>:</p>
+<pre><code>{
+  name: "show_booking_form",
+  description: "Muestra el formulario de reservación al cliente cuando está listo para reservar",
+  input_schema: { type: "object", properties: {}, required: [] }
+}</code></pre>
+
+<p>Cuando Claude llama este tool, el frontend detecta la <code>tool_use</code> en la respuesta y renderiza el componente <code>&lt;BookingForm /&gt;</code> dentro del panel del chat.</p>
+
+<h3>3.4 Módulo de Disponibilidad</h3>
+<p><code>google-calendar.ts</code> se comunica con la <strong>Google Calendar API</strong> usando una <strong>Service Account</strong> (credenciales en variable de entorno). La función <code>isRoomAvailable(roomType, checkIn, checkOut)</code> lista los eventos en el calendario único <em>"hotel"</em> cuyo título contenga el código de la suite pedida y verifica que no exista traslape de fechas.</p>
+
+<h3>3.5 Procesamiento de Reservaciones (Backend)</h3>
+<p><code>bookFn.ts</code> (server function) ejecuta el siguiente flujo:</p>
+<ol class="steps">
+  <li>Recibe el payload del formulario: nombre, email, teléfono, check-in, check-out, tipo de habitación, huéspedes.</li>
+  <li>Genera un <code>bookingId</code> (UUID).</li>
+  <li>Llama <code>isRoomAvailable()</code> → Google Calendar API.</li>
+  <li>Si <strong>disponible</strong>: llama <code>sendToZapier()</code> con todos los datos + UUID. Retorna <code>{ status: "confirmed", bookingId }</code>.</li>
+  <li>Si <strong>no disponible</strong>: retorna <code>{ status: "unavailable" }</code> sin llamar Zapier.</li>
+</ol>
+
+<!-- ───────────────── 4. FLUJO COMPLETO ───────────────── -->
+<h2>4. Flujo Completo de una Reservación</h2>
+
+<div class="flow">Browser (Chat Widget)
+  │
+  ├─ Usuario escribe: "Quiero reservar una suite para el fin de semana"
+  │
+  ▼
+POST /api/chat ──► Claude API (claude-sonnet-4-6)
+  │                  ┌── RAG: contexto de habitaciones y políticas
+  │                  └── Historial de conversación
+  │
+  │ Claude responde con tool_use: show_booking_form
+  │
+  ▼
+Frontend detecta tool_use → renderiza &lt;BookingForm /&gt; en el chat
+  │
+  │ Usuario llena: nombre, email, teléfono, fechas, suite, huéspedes
+  │
+  ▼
+bookServerFn (server-side)
+  │
+  ├─ isRoomAvailable() → Google Calendar API (Service Account)
+  │       │
+  │  ┌────┴────┐
+  │  │         │
+  │ Libre    Ocupada
+  │  │         │
+  │  │    return { status: "unavailable" }
+  │  │    └── Frontend: "Lo sentimos, esa suite no está disponible"
+  │  │
+  │  ▼
+  sendToZapier({ name, email, phone, checkIn, checkOut,
+                 roomType, guests, bookingId })
+  │
+  ▼
+return { status: "confirmed", bookingId }
+└── Frontend: pantalla de confirmación con número de reserva</div>
+
+<!-- ───────────────── 5. ZAPIER ───────────────── -->
+<h2>5. Configuración de Zapier</h2>
+
+<div class="summary-box">
+  <p><strong>Trigger:</strong> Webhooks by Zapier → <em>Catch Hook</em>. El backend llama este webhook únicamente cuando la disponibilidad ya fue confirmada. Zapier nunca recibe una reservación no disponible.</p>
+</div>
+
+<h3>Pasos del Zap (flujo lineal)</h3>
+<ol class="steps">
+  <li>
+    <strong>Trigger — Catch Hook</strong><br>
+    Recibe JSON con: <code>bookingId</code>, <code>name</code>, <code>email</code>, <code>phone</code>, <code>checkIn</code>, <code>checkOut</code>, <code>roomType</code> (SVM / SFM / SP), <code>guests</code>.<br>
+    Las fechas vienen en formato ISO 8601 con offset Guatemala: <code>2026-06-10T15:00:00-06:00</code>.
+  </li>
+  <li>
+    <strong>Formatter — Lookup Table</strong><br>
+    Traduce el código de habitación a nombre completo:<br>
+    <code>SVM → Suite Vista Mar</code> | <code>SFM → Suite Frente al Mar</code> | <code>SP → Suite Presidencial</code>
+  </li>
+  <li>
+    <strong>Formatter — Date/Time</strong><br>
+    Formatea <code>checkIn</code> → <code>DD/MM/YYYY</code> (para el correo y Sheets).
+  </li>
+  <li>
+    <strong>Formatter — Date/Time</strong><br>
+    Formatea <code>checkOut</code> → <code>DD/MM/YYYY</code>.
+  </li>
+  <li>
+    <strong>Google Calendar → Create Detailed Event</strong><br>
+    Crea el evento en el calendario <em>"hotel"</em>.<br>
+    Título: <code>Reservación - {roomType} - {name}</code><br>
+    Zona horaria: <code>America/Guatemala</code><br>
+    Guarda el <code>calendar_event_id</code> generado por Google para uso en n8n.
+  </li>
+  <li>
+    <strong>Gmail → Send Email</strong><br>
+    Envía correo de confirmación al huésped (<code>email</code>) con nombre completo de la suite y fechas formateadas.
+  </li>
+  <li>
+    <strong>Google Sheets → Create Spreadsheet Row</strong><br>
+    Registra la reserva en la hoja <em>"Reservaciones"</em> con todas las columnas del esquema (incluyendo <code>status = confirmed</code> y el <code>calendar_event_id</code> del paso 5).
+  </li>
+</ol>
+
+<h3>Esquema de la hoja "Reservaciones" (Google Sheets)</h3>
+<table>
+  <thead>
+    <tr><th>Columna</th><th>Tipo</th><th>Notas</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>booking_id</code></td><td>string</td><td>UUID generado por el backend</td></tr>
+    <tr><td><code>name</code></td><td>string</td><td></td></tr>
+    <tr><td><code>email</code></td><td>string</td><td></td></tr>
+    <tr><td><code>phone</code></td><td>string</td><td></td></tr>
+    <tr><td><code>check_in</code></td><td>date</td><td>YYYY-MM-DD</td></tr>
+    <tr><td><code>check_out</code></td><td>date</td><td>YYYY-MM-DD</td></tr>
+    <tr><td><code>room_type</code></td><td>string</td><td>SVM / SFM / SP</td></tr>
+    <tr><td><code>guests</code></td><td>number</td><td></td></tr>
+    <tr><td><code>status</code></td><td>string</td><td>confirmed / cancelled / modified</td></tr>
+    <tr><td><code>calendar_event_id</code></td><td>string</td><td>ID del evento en Google Calendar</td></tr>
+    <tr><td><code>reminder_24h</code></td><td>boolean</td><td>Flag para recordatorio 24h</td></tr>
+    <tr><td><code>reminder_2h</code></td><td>boolean</td><td>Flag para recordatorio 2h</td></tr>
+    <tr><td><code>created_at</code></td><td>datetime</td><td></td></tr>
+  </tbody>
+</table>
+
+<!-- ───────────────── 6. n8n ───────────────── -->
+<h2>6. Workflows de n8n</h2>
+
+<div class="summary-box">
+  <p>n8n corre como segundo contenedor en docker-compose (puerto 5678). Los workflows se importan desde los archivos JSON en <code>n8n-workflows/</code>. Cubren el ciclo de vida completo de la reservación: recordatorios, cancelación, modificación y reportes al admin.</p>
+</div>
+
+<h3>Workflow A — Recordatorio 24 horas antes <span class="badge badge-blue">reminder-24h.json</span></h3>
+<div class="grid-2">
+  <div class="card">
+    <h4>Trigger</h4>
+    <p>Schedule cron: <code>0 14 * * *</code><br>(8:00 AM Guatemala, UTC-6)</p>
+  </div>
+  <div class="card">
+    <h4>Lógica</h4>
+    <p>Lee Sheets → filtra donde <code>check_in == mañana AND status == confirmed AND reminder_24h != TRUE</code> → envía correo con link de cancelación → marca <code>reminder_24h = TRUE</code>.</p>
+  </div>
+</div>
+
+<hr>
+
+<h3>Workflow B — Recordatorio 2 horas antes <span class="badge badge-blue">reminder-2h.json</span></h3>
+<div class="grid-2">
+  <div class="card">
+    <h4>Trigger</h4>
+    <p>Schedule: cada 15 minutos.</p>
+  </div>
+  <div class="card">
+    <h4>Lógica</h4>
+    <p>Lee Sheets → filtra <code>status == confirmed AND reminder_2h != TRUE AND check_in ∈ [ahora, ahora+2h]</code> → envía email "Tu check-in es en 2 horas" → marca <code>reminder_2h = TRUE</code>.</p>
+  </div>
+</div>
+<p style="font-size:9pt; color: var(--gray-600); margin-top:-0.5rem;">El flag <code>reminder_2h</code> garantiza exactamente un correo por reservación sin importar cuántas veces se ejecute el trigger en la ventana de 2 h.</p>
+
+<hr>
+
+<h3>Workflow C — Cancelación de reserva <span class="badge badge-orange">cancelacion.json</span></h3>
+<div class="flow">Trigger: GET /webhook/cancel-booking?id={booking_id}
+  (link incluido en el email de recordatorio 24h)
+          │
+          ▼
+  Google Sheets → buscar fila por booking_id
+          │
+     ┌────┴────┐
+  Encontrado  No encontrado
+  + confirmed
+     │             └── HTML: "Enlace no válido o ya procesado"
+     │
+     ▼
+  Google Calendar → eliminar evento
+          │
+          ▼
+  Google Sheets → status = "cancelled"
+          │
+          ▼
+  Gmail → correo de cancelación al huésped
+          │
+          ▼
+  HTML: "Tu reservación ha sido cancelada exitosamente"</div>
+
+<hr>
+
+<h3>Workflow D — Modificación de fechas <span class="badge badge-purple">modificacion.json</span></h3>
+<div class="grid-2">
+  <div class="card">
+    <h4>Trigger</h4>
+    <p>Form Trigger en <code>/form/modify-booking</code>.<br>Campos: ID de Reservación, nueva fecha check-in, nueva fecha check-out.</p>
+  </div>
+  <div class="card">
+    <h4>Lógica</h4>
+    <p>Valida fechas → busca en Sheets → si <code>confirmed</code>: elimina evento anterior en Calendar, crea nuevo evento, actualiza Sheets (fechas + <code>calendar_event_id</code> + <code>status=modified</code> + reset de flags) → envía correo.</p>
+  </div>
+</div>
+
+<hr>
+
+<h3>Workflow E — Reporte mensual <span class="badge badge-green">reporte-mensual.json</span></h3>
+<div class="grid-2">
+  <div class="card">
+    <h4>Trigger</h4>
+    <p>Schedule cron: <code>0 13 1 * *</code><br>(7:00 AM Guatemala, día 1 de cada mes)</p>
+  </div>
+  <div class="card">
+    <h4>Lógica</h4>
+    <p>Lee todas las filas de Sheets → filtra reservas del mes anterior → calcula totales por suite, noches y ingresos (Q) → envía tabla HTML al <code>ADMIN_EMAIL</code>.</p>
+  </div>
+</div>
+
+<!-- ───────────────── 7. AGENTE IA ───────────────── -->
+<h2>7. Configuración del Agente de IA</h2>
+
+<h3>7.1 Modelo</h3>
+<p>Se usa <strong><code>claude-sonnet-4-6</code></strong> (Anthropic Claude API). El agente corre enteramente en el servidor; la API key nunca llega al navegador.</p>
+
+<h3>7.2 Sistema RAG (Retrieval-Augmented Generation)</h3>
+<p>El módulo <code>rag.ts</code> implementa un RAG liviano sin base de datos vectorial:</p>
+<ol class="steps">
+  <li>Los archivos fuente de conocimiento son 4 documentos Markdown en <code>src/lib/knowledge/</code>: <code>rooms.md</code>, <code>policies.md</code>, <code>services.md</code>, <code>faq.md</code>.</li>
+  <li>Cada mensaje del usuario dispara <code>retrieveContext(query)</code>, que hace matching por keywords sobre el texto de los <code>.md</code>.</li>
+  <li>Los fragmentos más relevantes se adjuntan al system prompt antes de cada llamada a Claude.</li>
+  <li>Para actualizar el conocimiento del agente basta con editar los archivos <code>.md</code> — no hay índice ni embedding que reconstruir.</li>
+</ol>
+
+<h3>7.3 Tool Use</h3>
+<p>El agente tiene definido exactamente un tool. Claude lo invoca cuando el usuario ha expresado intención clara de hacer una reservación:</p>
+<pre><code>// Definición del tool (claude.ts)
+{
+  name: "show_booking_form",
+  description: "Muestra el formulario de reservación al cliente cuando está listo para reservar",
+  input_schema: {
+    type: "object",
+    properties: {},
+    required: []
+  }
+}</code></pre>
+
+<p>El <strong>frontend</strong> (<code>ChatMessage.tsx</code>) detecta un bloque <code>tool_use</code> con <code>name === "show_booking_form"</code> en la respuesta de la API y renderiza el componente <code>&lt;BookingForm /&gt;</code> en línea dentro del historial del chat.</p>
+
+<h3>7.4 Historial de conversación</h3>
+<p>El historial se mantiene en estado React del cliente (<code>useState</code>) y se envía completo al backend en cada turno. No se persiste en base de datos.</p>
+
+<!-- ───────────────── 8. VARIABLES DE ENTORNO ───────────────── -->
+<h2>8. Variables de Entorno</h2>
+
+<table>
+  <thead>
+    <tr><th>Variable</th><th>Descripción</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>ANTHROPIC_API_KEY</code></td><td>Clave de la Claude API</td></tr>
+    <tr><td><code>ZAPIER_WEBHOOK_URL</code></td><td>URL del Catch Hook de Zapier</td></tr>
+    <tr><td><code>GOOGLE_SERVICE_ACCOUNT_KEY</code></td><td>JSON de la Service Account (una sola línea)</td></tr>
+    <tr><td><code>GOOGLE_CALENDAR_HOTEL</code></td><td>ID del calendario "hotel" en Google Calendar</td></tr>
+    <tr><td><code>N8N_PASSWORD</code></td><td>Contraseña de acceso a la UI de n8n</td></tr>
+  </tbody>
+</table>
+
+<h3>Variables de entorno de n8n (configurar en Settings → Environment Variables dentro de n8n)</h3>
+<table>
+  <thead>
+    <tr><th>Variable</th><th>Descripción</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>GOOGLE_CALENDAR_ID</code></td><td>Mismo valor que <code>GOOGLE_CALENDAR_HOTEL</code></td></tr>
+    <tr><td><code>GOOGLE_SHEETS_ID</code></td><td>ID del spreadsheet (visible en la URL de Google Sheets)</td></tr>
+    <tr><td><code>ADMIN_EMAIL</code></td><td>Correo del administrador para reportes mensuales</td></tr>
+    <tr><td><code>N8N_HOST</code></td><td>URL pública de n8n (<code>http://localhost:5678</code> local)</td></tr>
+  </tbody>
+</table>
+
+<!-- ───────────────── 9. DESPLIEGUE ───────────────── -->
+<h2>9. Despliegue</h2>
+
+<h3>Local (desarrollo)</h3>
+<pre><code># Sin Docker
+npm run dev
+
+# Con Docker Compose (app + n8n)
+docker-compose up --build</code></pre>
+
+<h3>Producción (Azure Container Apps)</h3>
+<ol class="steps">
+  <li>Construir imagen: <code>docker build -t azul-horizonte-app .</code></li>
+  <li>Push a Azure Container Registry: <code>az acr build ...</code></li>
+  <li>Crear Container App Environment en Azure Portal.</li>
+  <li>Deploy del contenedor <code>app</code> (ingress público, puerto 3000).</li>
+  <li>Deploy del contenedor <code>n8n</code> (ingress interno, puerto 5678).</li>
+  <li>Configurar variables de entorno vía Azure Portal o <code>az containerapp update --set-env-vars</code>.</li>
+</ol>
+
+<!-- ───────────────── 10. ESTRUCTURA DE ARCHIVOS ───────────────── -->
+<h2>10. Estructura de Archivos Relevantes</h2>
+
+<pre><code>/
+├── src/
+│   ├── routes/
+│   │   ├── __root.tsx          # Layout global; monta &lt;ChatWidget /&gt;
+│   │   ├── index.tsx           # Home
+│   │   ├── habitaciones.tsx    # Habitaciones y precios
+│   │   ├── servicios.tsx       # Servicios
+│   │   └── faq.tsx             # Preguntas frecuentes
+│   ├── components/
+│   │   ├── chat/
+│   │   │   ├── ChatWidget.tsx  # Botón flotante + panel deslizante
+│   │   │   ├── ChatMessage.tsx # Renderiza texto y BookingForm
+│   │   │   └── BookingForm.tsx # Formulario embebido en el chat
+│   │   └── layout/
+│   │       ├── Header.tsx
+│   │       └── Footer.tsx
+│   └── lib/
+│       ├── claude.ts           # buildSystemPrompt(), definición de tools
+│       ├── rag.ts              # retrieveContext(query)
+│       ├── zapier.ts           # sendToZapier()
+│       ├── google-calendar.ts  # isRoomAvailable()
+│       ├── server/
+│       │   ├── bookFn.ts       # Verifica Calendar → llama Zapier
+│       │   └── chatFn.ts       # Llama Claude API
+│       └── knowledge/
+│           ├── rooms.md
+│           ├── policies.md
+│           ├── services.md
+│           └── faq.md
+├── n8n-workflows/              # JSONs importables en n8n
+├── Dockerfile
+├── docker-compose.yml
+└── .env.example</code></pre>
+
+<!-- ───────────────── FOOTER ───────────────── -->
+<div class="footer">
+  Universidad Mariano Gálvez de Guatemala · Inteligencia Artificial · Proyecto Final · Mayo 2026<br>
+  <strong>Azul Horizonte Boutique Hotel</strong> — Sistema de Reservaciones con IA
+</div>
+
+</div><!-- /page -->
+
+</body>
+</html>

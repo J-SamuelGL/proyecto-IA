@@ -1,0 +1,17 @@
+node_modules
+.DS_Store
+dist
+dist-ssr
+*.local
+.env
+.nitro
+.tanstack
+.wrangler
+.output
+.vinxi
+__unconfig*
+todos.json
+# Google Service Account credentials — never commit these
+hotel-*.json
+*-service-account*.json
+*credentials*.json
