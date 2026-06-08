@@ -11,6 +11,7 @@ services:
       - ZAPIER_WEBHOOK_URL=${ZAPIER_WEBHOOK_URL}
       - GOOGLE_SERVICE_ACCOUNT_KEY=${GOOGLE_SERVICE_ACCOUNT_KEY}
       - GOOGLE_CALENDAR_HOTEL=${GOOGLE_CALENDAR_HOTEL}
+      - GOOGLE_SHEETS_ID=${GOOGLE_SHEETS_ID}
     depends_on:
       - n8n
     restart: unless-stopped

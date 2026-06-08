@@ -1,4 +1,5 @@
 import { createServerFn } from '@tanstack/react-start'
+import { randomUUID } from 'node:crypto'
 import { sendToZapier, type BookingData, type BookingResult } from '../zapier'
 import { isRoomAvailable, isGoogleCalendarConfigured } from '../google-calendar'
 
@@ -37,7 +38,7 @@ export const bookServerFn = createServerFn({ method: 'POST' })
     }
 
     try {
-      return await sendToZapier(data)
+      return await sendToZapier({ ...data, bookingId: randomUUID() })
     } catch (error) {
       console.error('[bookServerFn]', error)
       return {

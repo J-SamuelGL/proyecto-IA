@@ -5,11 +5,11 @@ dist/
 .env.*
 !.env.example
 
-# Service account key files
-*.json
-!package.json
-!package-lock.json
-!tsconfig.json
+# Service account key files — exclude by specific pattern, not all *.json
+hotel-*.json
+*-service-account*.json
+*credentials*.json
+.cta.json
 
 # Dev/test/docs — not needed in the image
 tests/

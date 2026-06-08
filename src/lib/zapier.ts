@@ -1,4 +1,5 @@
 export interface BookingData {
+  bookingId: string  // UUID generado por el backend antes de llamar Zapier
   name: string
   email: string
   phone: string
@@ -19,7 +20,6 @@ export async function sendToZapier(data: BookingData): Promise<BookingResult> {
     return getMockBookingResult(data)
   }
 
-  const bookingId = crypto.randomUUID()
   const controller = new AbortController()
   const timeoutId = setTimeout(() => controller.abort(), 30_000)
 
@@ -27,7 +27,7 @@ export async function sendToZapier(data: BookingData): Promise<BookingResult> {
     const response = await fetch(process.env.ZAPIER_WEBHOOK_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...data, bookingId }),
+      body: JSON.stringify(data),
       signal: controller.signal,
     })
 
@@ -37,7 +37,7 @@ export async function sendToZapier(data: BookingData): Promise<BookingResult> {
 
     return {
       status: 'confirmed',
-      bookingId,
+      bookingId: data.bookingId,
       message: `¡Reservación confirmada! Recibirás un correo de confirmación en ${data.email} en los próximos minutos.`,
     }
   } finally {
@@ -58,7 +58,7 @@ function getMockBookingResult(data: BookingData): BookingResult {
 
   return {
     status: 'confirmed',
-    bookingId: `AH-${Date.now()}`,
+    bookingId: data.bookingId,
     message: `¡Reservación confirmada! Recibirás un correo de confirmación en ${data.email} en los próximos minutos.`,
   }
 }
