@@ -1,193 +1,175 @@
-Welcome to your new TanStack Start app! 
+# Azul Horizonte Boutique Hotel
 
-# Getting Started
+> *"Donde el Pacífico te abraza"*
 
-To run this application:
+Proyecto final universitario (Universidad Mariano Gálvez) — integración de un sitio web de hotel boutique con un agente de IA (Claude), Zapier y n8n para gestión automatizada de reservaciones.
+
+---
+
+## Stack Tecnológico
+
+| Capa | Tecnología |
+|---|---|
+| Frontend/Backend | TanStack Start (React SSR, file-based routing) |
+| Lenguaje | TypeScript |
+| Estilos | Tailwind CSS |
+| Contenedores | Docker + docker-compose |
+| Agente IA | Claude API (`claude-sonnet-4-6`) con tool use |
+| RAG | Keyword matching sobre `/app/lib/knowledge/*.md` |
+| Automatización 1 | Zapier (webhook → Calendar + Gmail + Sheets) |
+| Automatización 2 | n8n (workflows programados) |
+| Calendario | Google Calendar API (Service Account) |
+| Base de datos | Google Sheets |
+
+---
+
+## Arquitectura
+
+```
+Browser
+  └─ Chat Widget
+       └─ POST /api/chat ──► Claude API
+                                 ↓ tool call: show_booking_form
+                         <BookingForm /> dentro del chat
+                                 ↓ submit
+                         bookServerFn (server-side)
+                                 ↓
+                         google-calendar.ts → isRoomAvailable()
+                         ┌──────────────────────┐
+                      Disponible           No disponible
+                         ↓                      ↓
+                    sendToZapier()        {status:"unavailable"}
+                         ↓
+                    Zapier Webhook
+                    (Calendar + Gmail + Sheets)
+                    {status:"confirmed", bookingId}
+
+n8n
+  ├─ Reminder 24h  → email con link de cancelación
+  ├─ Reminder 2h   → email de check-in próximo
+  ├─ Cancelación   → webhook GET → borra evento + actualiza Sheets
+  ├─ Modificación  → form web → actualiza fechas en Calendar y Sheets
+  └─ Reporte mes   → estadísticas → email al admin
+```
+
+---
+
+## Variables de Entorno
+
+Copia `.env.example` a `.env` y completa los valores:
 
 ```bash
+ANTHROPIC_API_KEY=          # Claude API key
+ZAPIER_WEBHOOK_URL=         # URL del Catch Hook de Zapier
+
+# Google Calendar — Service Account (JSON en una sola línea)
+GOOGLE_SERVICE_ACCOUNT_KEY= # {"type":"service_account",...}
+GOOGLE_CALENDAR_HOTEL=      # ID del calendario "hotel"
+
+# n8n
+N8N_PASSWORD=               # Contraseña para la UI de n8n
+```
+
+---
+
+## Desarrollo Local
+
+```bash
+# Instalar dependencias
 npm install
+
+# Servidor de desarrollo
 npm run dev
-```
 
-# Building For Production
-
-To build this application for production:
-
-```bash
+# Build de producción
 npm run build
-```
 
-## Testing
-
-This project uses [Vitest](https://vitest.dev/) for testing. You can run the tests with:
-
-```bash
+# Tests
 npm run test
 ```
 
-## Styling
+## Docker Compose
 
-This project uses [Tailwind CSS](https://tailwindcss.com/) for styling.
+```bash
+# Levantar app (puerto 3000) + n8n (puerto 5678)
+docker-compose up --build
 
-### Removing Tailwind CSS
-
-If you prefer not to use Tailwind CSS:
-
-1. Remove the demo pages in `src/routes/demo/`
-2. Replace the Tailwind import in `src/styles.css` with your own styles
-3. Remove `tailwindcss()` from the plugins array in `vite.config.ts`
-4. Uninstall the packages: `npm install @tailwindcss/vite tailwindcss -D`
-
-
-
-## Routing
-
-This project uses [TanStack Router](https://tanstack.com/router) with file-based routing. Routes are managed as files in `src/routes`.
-
-### Adding A Route
-
-To add a new route to your application just add a new file in the `./src/routes` directory.
-
-TanStack will automatically generate the content of the route file for you.
-
-Now that you have two routes you can use a `Link` component to navigate between them.
-
-### Adding Links
-
-To use SPA (Single Page Application) navigation you will need to import the `Link` component from `@tanstack/react-router`.
-
-```tsx
-import { Link } from "@tanstack/react-router";
+# Solo la app
+docker-compose up app
 ```
 
-Then anywhere in your JSX you can use it like so:
+Acceder a n8n: `http://localhost:5678` (usuario: `admin`, contraseña: valor de `N8N_PASSWORD`)
 
-```tsx
-<Link to="/about">About</Link>
+---
+
+## Importar Workflows de n8n
+
+Los workflows están en `n8n-workflows/`. Desde la UI de n8n:
+
+1. **Settings → Import** → seleccionar cada archivo `.json`
+2. Configurar en **Settings → Environment Variables**:
+
+| Variable | Descripción |
+|---|---|
+| `GOOGLE_CALENDAR_ID` | Mismo valor que `GOOGLE_CALENDAR_HOTEL` |
+| `GOOGLE_SHEETS_ID` | ID del spreadsheet de reservaciones |
+| `ADMIN_EMAIL` | Correo del administrador |
+| `N8N_HOST` | URL pública de n8n |
+
+---
+
+## Estructura del Proyecto
+
+```
+src/
+├── routes/
+│   ├── __root.tsx          # Layout global con ChatWidget
+│   ├── index.tsx           # Home
+│   ├── habitaciones.tsx    # Tipos y precios
+│   ├── servicios.tsx       # Servicios del hotel
+│   └── faq.tsx
+├── components/
+│   ├── chat/
+│   │   ├── ChatWidget.tsx
+│   │   ├── ChatMessage.tsx
+│   │   └── BookingForm.tsx
+│   └── layout/
+│       ├── Header.tsx
+│       └── Footer.tsx
+└── lib/
+    ├── claude.ts           # System prompt y tools
+    ├── rag.ts              # retrieveContext() — keyword matching
+    ├── zapier.ts           # sendToZapier()
+    ├── google-calendar.ts  # isRoomAvailable()
+    ├── server/
+    │   ├── bookFn.ts       # Verifica disponibilidad → llama Zapier
+    │   └── chatFn.ts       # Llama Claude API
+    └── knowledge/          # Base de conocimiento para RAG
+        ├── rooms.md
+        ├── policies.md
+        ├── services.md
+        └── faq.md
 ```
 
-This will create a link that will navigate to the `/about` route.
+---
 
-More information on the `Link` component can be found in the [Link documentation](https://tanstack.com/router/v1/docs/framework/react/api/router/linkComponent).
+## Habitaciones
 
-### Using A Layout
+| Tipo | Abrev. | Precio/noche | Capacidad |
+|---|---|---|---|
+| Suite Vista Mar | `SVM` | Q950 | 1–2 personas |
+| Suite Frente al Mar | `SFM` | Q1,450 | 2–3 personas |
+| Suite Presidencial | `SP` | Q2,200 | 2–6 personas |
 
-In the File Based Routing setup the layout is located in `src/routes/__root.tsx`. Anything you add to the root route will appear in all the routes. The route content will appear in the JSX where you render `{children}` in the `shellComponent`.
+---
 
-Here is an example layout that includes a header:
+## Despliegue en Azure Container Apps
 
-```tsx
-import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router'
+```bash
+# Build y push a Azure Container Registry
+docker build -t azul-horizonte-app .
+az acr build ...
 
-export const Route = createRootRoute({
-  head: () => ({
-    meta: [
-      { charSet: 'utf-8' },
-      { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-      { title: 'My App' },
-    ],
-  }),
-  shellComponent: ({ children }) => (
-    <html lang="en">
-      <head>
-        <HeadContent />
-      </head>
-      <body>
-        <header>
-          <nav>
-            <Link to="/">Home</Link>
-            <Link to="/about">About</Link>
-          </nav>
-        </header>
-        {children}
-        <Scripts />
-      </body>
-    </html>
-  ),
-})
+# Deploy (puerto 3000 público, n8n interno)
+az containerapp create ...
 ```
-
-More information on layouts can be found in the [Layouts documentation](https://tanstack.com/router/latest/docs/framework/react/guide/routing-concepts#layouts).
-
-## Server Functions
-
-TanStack Start provides server functions that allow you to write server-side code that seamlessly integrates with your client components.
-
-```tsx
-import { createServerFn } from '@tanstack/react-start'
-
-const getServerTime = createServerFn({
-  method: 'GET',
-}).handler(async () => {
-  return new Date().toISOString()
-})
-
-// Use in a component
-function MyComponent() {
-  const [time, setTime] = useState('')
-  
-  useEffect(() => {
-    getServerTime().then(setTime)
-  }, [])
-  
-  return <div>Server time: {time}</div>
-}
-```
-
-## API Routes
-
-You can create API routes by using the `server` property in your route definitions:
-
-```tsx
-import { createFileRoute } from '@tanstack/react-router'
-import { json } from '@tanstack/react-start'
-
-export const Route = createFileRoute('/api/hello')({
-  server: {
-    handlers: {
-      GET: () => json({ message: 'Hello, World!' }),
-    },
-  },
-})
-```
-
-## Data Fetching
-
-There are multiple ways to fetch data in your application. You can use TanStack Query to fetch data from a server. But you can also use the `loader` functionality built into TanStack Router to load the data for a route before it's rendered.
-
-For example:
-
-```tsx
-import { createFileRoute } from '@tanstack/react-router'
-
-export const Route = createFileRoute('/people')({
-  loader: async () => {
-    const response = await fetch('https://swapi.dev/api/people')
-    return response.json()
-  },
-  component: PeopleComponent,
-})
-
-function PeopleComponent() {
-  const data = Route.useLoaderData()
-  return (
-    <ul>
-      {data.results.map((person) => (
-        <li key={person.name}>{person.name}</li>
-      ))}
-    </ul>
-  )
-}
-```
-
-Loaders simplify your data fetching logic dramatically. Check out more information in the [Loader documentation](https://tanstack.com/router/latest/docs/framework/react/guide/data-loading#loader-parameters).
-
-# Demo files
-
-Files prefixed with `demo` can be safely deleted. They are there to provide a starting point for you to play around with the features you've installed.
-
-# Learn More
-
-You can learn more about all of the offerings from TanStack in the [TanStack documentation](https://tanstack.com).
-
-For TanStack Start specific documentation, visit [TanStack Start](https://tanstack.com/start).
